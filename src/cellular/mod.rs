@@ -1,68 +1,12 @@
-use rand::{self, prelude::*};
-
-#[derive(Default, Clone, Copy, PartialEq, Eq)]
-pub enum BasicCell{
-    #[default]
-    Dead,
-    Alive
-}
-
-impl std::fmt::Display for BasicCell {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-         let p = ["  ", "$$"];
- 
-         let index: usize = match self {
-             BasicCell::Dead => 0,
-             BasicCell::Alive => 1,
-         };
- 
-        write!(f, "{}", p[index])
-
-    }
-    
-}
+pub mod wacky_cell;
+pub mod life_cell;
 
 pub trait Cell{
     fn update(&self, neightbors: [&Self; 8]) -> Self;
-    fn is(&self, is_kind: Self) -> bool;
+    // fn is(&self, is_kind: Self) -> bool;
     fn random() -> Self;
 }
 
-impl Cell for BasicCell{
-    fn update(&self, neightbors: [&BasicCell; 8]) -> BasicCell{
-        let mut live_neightbors = 0;
-        for neightbor in neightbors{
-            if neightbor.is(BasicCell::Alive) {
-                live_neightbors += 1;
-            }
-        }
-
-        let mut new_cell = self.clone();
-        if self.is(BasicCell::Alive) {
-            if live_neightbors < 2 || live_neightbors > 3 {new_cell = BasicCell::Dead;}
-        }
-        else{
-            if live_neightbors == 3 {new_cell = BasicCell::Alive;}
-        }
-
-        new_cell
-    }
-
-    fn is(&self, is_kind: BasicCell) -> bool{
-        match self {
-            BasicCell::Dead => false,
-            BasicCell::Alive => true,
-        }
-    }
-
-    fn random() -> Self{
-        let rand = rand::random::<i32>() % 2;
-        match rand {
-            x if x == 0 => Self::Dead, 
-            _ => Self::Alive,
-        }
-    }
-}
 
 #[derive(Clone, Copy)]
 pub struct Board<CellType, const WIDTH: usize, const HEIGHT: usize>{
@@ -168,3 +112,5 @@ where
         write!(f, "{}", string)
     }
 }
+
+pub use life_cell::*;

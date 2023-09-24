@@ -52,5 +52,6 @@ fn main() -> Result<(), io::Error> {
     )?;
     terminal.show_cursor()?;
 
+
     Ok(())
 }

@@ -1,42 +1,39 @@
 [project]
-name="cellular_automata"
-version="0.0.0"
-edition="0.0.0"
+name = "cellular_automata"
+version = "0.0.0"
+edition = "0.1.0"
 
 [[todo]]
-name="better drawing"
-difficulty=0.1
-priority=0.3
-
-
-[[todo]]
-name="better interaction"
-difficulty=0.4
-priority=0.7
-
-[[todo.subfeature]]
-name="impl Widget for Board"
-difficulty=0.9
-priority=0.7
-
-[[todo.subfeature]]
-name="run pause toggle cells"
-difficulty=0.9
-priority=0.7
-
+name = "better drawing"
+priority = 0.30000001192092896
+difficulty = 0.10000000149011612
 
 [[todo]]
-name="conways cell randomizer"
-difficulty=0.3
-priority=0.1
+name = "better interaction"
+priority = 0.699999988079071
+difficulty = 0.4000000059604645
 
+[[todo.todo]]
+name = "impl Widget for Board"
+priority = 0.699999988079071
+difficulty = 0.8999999761581421
+
+[[todo.todo]]
+name = "run pause toggle cells"
+priority = 0.699999988079071
+difficulty = 0.8999999761581421
+
+[[todo]]
+name = "conways cell randomizer"
+priority = 0.10000000149011612
+difficulty = 0.30000001192092896
 
 [[done]]
-name="Conways Game of life"
-difficulty=0.2
-priority=0.3
+name = "Conways Game of life"
+priority = 0.30000001192092896
+difficulty = 0.20000000298023224
 
 [[done]]
-name="Generic Automata Cell"
-difficulty=0.8
-priority=0.8
+name = "Generic Automata Cell"
+priority = 0.800000011920929
+difficulty = 0.800000011920929

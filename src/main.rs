@@ -1,157 +1,110 @@
+use std::{fmt::Display, ops::DerefMut, rc::Rc};
+mod lifecell;
+use lifecell::LiveCell;
 
-#[derive(Clone, Debug, Default)]
-struct Board<Cell>{
+use rand::random;
+
+trait AutomataCell where 
+    Self: Clone + Eq + PartialEq
+{
+    fn step(&self, n: &[&Self]) -> Self;
+}
+
+
+#[derive(Clone, Debug)]
+struct Board<Cell> where
+    Cell: AutomataCell
+{
     width : usize,
     height: usize,
-    boards: [Vec<Cell>; 2],
     current: usize,
+    boards: [Rc<[Cell]>; 2],
 }
 
-trait AutomataCell where Self: Sized{
-    fn random() -> Self;
-    fn update(neightbors: [&Self; 9]) -> Self;
-}
-
-impl<Cell> Board<Cell>
-where
-    Cell: Default + Clone + Copy + AutomataCell
+impl<Cell> Board<Cell> where
+    Cell: AutomataCell
 {
-    fn __new<F: FnMut() -> Cell>(width: usize, height: usize, f: F) -> Self{
+    pub fn init_with<F>(width: usize, height: usize, f: F) -> Self
+    where
+        F: Fn() -> Cell
+    {
         let size = width * height;
-        let mut boards = [ Vec::new(), Vec::new(), ];
-        boards[0].resize_with(size, f);
-        boards[1].resize_with(size, Cell::default);
-        Board{width, height, boards, current: 0}
-    }
-
-    pub fn new_default(width: usize, height: usize) -> Self{
-        Self::__new(width, height, Cell::default)
-    }
-
-    pub fn new_random(width: usize, height: usize) -> Self{
-        Self::__new(width, height, Cell::random)
-    }
-    pub fn update(&mut self) {
-        for i in 0..self.width * self.height{
-            let x = (i % self.width) as isize;
-            let y = (i / self.width) as isize;
-            let neightbors = [
-                &self.boards[self.current][self.get_uclid(x - 1, y - 1)],
-                &self.boards[self.current][self.get_uclid(x - 1, y + 0)],
-                &self.boards[self.current][self.get_uclid(x - 1, y + 1)],
-                &self.boards[self.current][self.get_uclid(x + 0, y - 1)],
-                &self.boards[self.current][self.get_uclid(x + 0, y + 0)],
-                &self.boards[self.current][self.get_uclid(x + 0, y + 1)],
-                &self.boards[self.current][self.get_uclid(x + 1, y - 1)],
-                &self.boards[self.current][self.get_uclid(x + 1, y + 0)],
-                &self.boards[self.current][self.get_uclid(x + 1, y + 1)],
-            ];
-
-
-            let index = self.get_uclid(x,y);
-            self.boards[self.future_board()][index]= Cell::update(neightbors);
+        let mut bufa = Vec::new();
+        bufa.resize_with(size, f);
+        let bufb = bufa.clone();
+        Self{
+            current: 0,
+            width, height,
+            boards : [
+                bufa.into(),
+                bufb.into(),
+            ]
         }
-        self.current = self.future_board();
+    }
+
+    pub fn get_at(board: &Rc<[Cell]>, w: usize, h: usize, width: usize) -> &Cell{
+        &board[w + h * width]
+    }
+
+    pub fn step(&mut self) {
+        let curr_board = self.boards[(self.current + 0) % 2].clone();
+        let next_board = &mut self.boards[(self.current + 1) % 2];
+
+        for index in 0..self.height * self.width{
+            let w = index % self.width;
+            let h = index / self.width;
+            // returns the neighbors of the cell at (w, h)
+            // if it is in the border it will wrap around
+            let get = |x: isize, y: isize| {
+                let x = (x + w as isize).rem_euclid(self.width as isize);
+                let y = (y + h as isize).rem_euclid(self.height as isize);
+                Self::get_at(&curr_board, x as usize, y as usize, self.width)
+            };
+            let neightbors = [
+                get(-1, -1), get(0, -1), get(1, -1),
+                get(-1,  0), get(1,  0),
+                get(-1,  1), get(0,  1), get(1,  1),
+            ];
+            Rc::get_mut(next_board).unwrap()[index] = curr_board[index].step(&neightbors);
+        }
+
+        self.current = (self.current + 1) % 2;
+    }
+
+    fn stable (&self) -> bool {
+        self.boards[0] == self.boards[1]
+    }
+
+    #[allow(dead_code)]
+    fn set_at(&mut self, w: usize, h: usize, cell: Cell){
+        Rc::get_mut(&mut self.boards[self.current]).unwrap()[w + h * self.width] = cell;
     }
 }
 
-// util functions
-impl<Cell> Board<Cell>{
-    fn future_board(&self) -> usize { (self.current + 1) % 2 }
-
-    fn get_uclid(&self, x: isize, y: isize) -> usize {
-        (x + y * self.width as isize).rem_euclid((self.width * self.height) as isize) as usize
-    }
-
-    fn get_uclid_mut(&mut self, x: isize, y: isize) -> usize {
-        (x + y * self.width as isize).rem_euclid((self.width * self.height) as isize) as usize
-    }
-
-    pub fn get(&self, x: isize, y: isize) -> &Cell {
-        let current = &self.boards[self.current];
-        &current[self.get_uclid(x, y)]
-    }
-}
-
-
-impl<Cell> std::fmt::Display for Board<Cell>
-where
-    Cell: std::fmt::Display
+impl<Cell> Display for Board<Cell> where
+    Cell: AutomataCell + Display
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for j in 0..self.height{
-            for i in 0..self.width{
-                write!(f, "{}", self.get(i as isize, j as isize))?;
+        for h in 0..self.height{
+            for w in 0..self.width{
+                write!(f, "{:3} ", self.boards[self.current][w + h * self.width])?;
             }
             write!(f, "\n")?;
         }
+        write!(f, "\x1B[{}A", self.height)?;
         Ok(())
     }
 }
 
-#[derive(Clone, Copy, Default, PartialEq, Eq)]
-enum LifeCell{
-    #[default]
-    Dead=0,
-    Alive=1,
-}
-
-impl From<&LifeCell> for usize{
-    fn from(value: &LifeCell) -> Self {
-        use LifeCell as LF;
-        match value {LF::Dead => 0, LF::Alive => 1}
-    }
-}
-
-impl AutomataCell for LifeCell{
-    fn update(neightbors: [&Self; 9]) -> LifeCell{
-        let mut total : usize = 0;
-        for i in 0..9{
-            let v : usize = neightbors[i].into();
-            total += v;
-        }
-        if *neightbors[4] == LifeCell::Alive{
-            if total < 3{
-                LifeCell::Dead
-            }
-            else if total > 4{
-                LifeCell::Dead
-            }
-            else {
-                LifeCell::Alive
-            }
-        }
-        else{
-            if total == 3{
-                LifeCell::Alive
-            }
-            else{
-                LifeCell::Dead
-            }
-        }
-    }
-
-    fn random() -> Self {
-        LifeCell::Alive
-    }
-}
-
-impl std::fmt::Display for LifeCell{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        use LifeCell as LF;
-        write!(f, "{}", match self {LF::Alive => "##", LF::Dead => "  "})
-    }
-}
-
 fn main() {
-    let mut b = Board::<LifeCell>::new_default(10, 10);
-    b.boards[b.current][0] = LifeCell::Alive;
-    b.boards[b.current][1] = LifeCell::Alive;
-    b.boards[b.current][0 + 10] = LifeCell::Alive;
-    b.boards[b.current][1 + 10] = LifeCell::Alive;
+    let mut rand_board = Board::init_with(32, 32, LiveCell::random);
+    loop {
+        print!("{rand_board}");
+        rand_board.step();
+        std::thread::sleep(std::time::Duration::from_millis(100));
+        if rand_board.stable() { break; }
+    }
 
-    println!("{b}");
-    println!("-----------");
-    b.update();
-    println!("{b}");
+    println!("reached stable board!");
+
 }

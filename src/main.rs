@@ -1,8 +1,8 @@
-use std::{fmt::Display, ops::DerefMut, rc::Rc};
+use std::{fmt::Display, rc::Rc};
 mod lifecell;
+mod fluid;
 use lifecell::LiveCell;
-
-use rand::random;
+use fluid::FluidCell;
 
 trait AutomataCell where 
     Self: Clone + Eq + PartialEq
@@ -96,12 +96,13 @@ impl<Cell> Display for Board<Cell> where
     }
 }
 
+const SIZE: usize = 16;
 fn main() {
-    let mut rand_board = Board::init_with(32, 32, LiveCell::random);
+    let mut rand_board = Board::init_with(SIZE, SIZE, FluidCell::random);
     loop {
         print!("{rand_board}");
         rand_board.step();
-        std::thread::sleep(std::time::Duration::from_millis(100));
+        std::thread::sleep(std::time::Duration::from_millis(1000));
         if rand_board.stable() { break; }
     }
 

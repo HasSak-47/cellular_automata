@@ -4,36 +4,16 @@ version = "0.0.0"
 edition = "0.1.0"
 
 [[todo]]
-name = "better drawing"
-priority = 0.30000001192092896
-difficulty = 0.10000000149011612
-
-[[todo]]
-name = "better interaction"
-priority = 0.699999988079071
-difficulty = 0.4000000059604645
-
-[[todo.todo]]
-name = "impl Widget for Board"
-priority = 0.699999988079071
-difficulty = 0.8999999761581421
-
-[[todo.todo]]
-name = "run pause toggle cells"
-priority = 0.699999988079071
-difficulty = 0.8999999761581421
-
-[[todo]]
-name = "conways cell randomizer"
-priority = 0.10000000149011612
-difficulty = 0.30000001192092896
+name = "Add more board types"
+priority = 0.1
+difficulty = 0.4
 
 [[done]]
-name = "Conways Game of life"
-priority = 0.30000001192092896
-difficulty = 0.20000000298023224
+name = "Wrapped GOL"
+priority = 0.1
+difficulty = 0.1
 
 [[done]]
-name = "Generic Automata Cell"
-priority = 0.800000011920929
-difficulty = 0.800000011920929
+name = "Basic Falling Water"
+priority = 0.1
+difficulty = 0.1
